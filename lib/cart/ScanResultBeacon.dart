@@ -30,14 +30,13 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
   String xpoint = "", ypoint = "";
   var isLoading = false;
   List<BeaconsM> beacons;
-  var dbHelper;
+  BeaconsDataBase dbHelper;
   String BmacId,BpositionA,BpositionB;
 
   @override
   void initState() {
     super.initState();
     getDeviceDetails();
-    dbHelper = BeaconsDataBase();
   }
 
   _calculateRsi(ScanResult result) {
