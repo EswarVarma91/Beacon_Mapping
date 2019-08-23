@@ -43,6 +43,18 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
     getDeviceDetails();
   }
 
+// ignore: non_constant_identifier_names
+  _CalculateRsi(ScanResult result) {
+    var txPower;
+    txPower = result.advertisementData.txPowerLevel == null ? -59 : result.advertisementData.txPowerLevel;
+    var ratio = result.rssi * 1.0 / txPower;
+    if (ratio < 1.0) {
+      return math.pow(ratio, 10).toStringAsFixed(1);
+    } else {
+      var distance = (0.89976) * math.pow(ratio, 7.7095) + 0.111;
+      return distance.toStringAsFixed(2);
+    }
+  }
 
   getDeviceDetails() {
 
@@ -69,59 +81,32 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
       String distance=list[i].bdistance.toString();
       _fetchData(macid, distance);
     }
-    // ** Top Three Mac Ids and Distance => Query or Service to get Position for Beacon Mac_Id ** //
   }
 
   _fetchData(String macid, String distance) {
-    beacons = dbHelper.getBeaconByMacId(macid) as List<BeaconsM>;
-    print("Check Data Base : "+beacons.toString());
-    _sendBeacons(beacons, distance);
-    }
+    beacons = dbHelper.getAllBeacons() as List<BeaconsM>;
 
-  _sendBeacons(List<BeaconsM>  beacons,distance) {
+    for(int i=0;i<beacons.length;i++){
+      if(beacons[i].mac_id==macid){
+        Map<String, String> devices1 = new Map();
+        devices1['mac_id'] = beacons[i].mac_id.toString();
+        devices1['distance'] = distance;
+        devices1['positionA'] =  beacons[i].bpositionA.toString();
+        devices1['positionB'] = beacons[i].bpositionB.toString();
+        minDevicesPositions.add(devices1);
+      }
 
-    for (int j = 0; j < beacons.length; j++) {
-      setState(() {
-        BmacId = beacons[j].mac_id.toString();
-        BpositionA = beacons[j].bpositionA.toString();
-        BpositionB = beacons[j].bpositionB.toString();
-      });
+      if(minDevicesPositions.length==3) {
+        listPoints = minDevicesPositions.map((data) => MeetingPoints.fromMap(data)).toList();
+        getMeetingPointsModified(listPoints);
+      }else{
+        getDeviceDetails();
 
-      Map<String, String> devices1 = new Map();
-      devices1['mac_id'] = BmacId;
-      devices1['distance'] = distance;
-      devices1['positionA'] = BpositionA;
-      devices1['positionB'] = BpositionB;
-
-      minDevicesPositions.add(devices1);
-
-      //minDevicesPositions.add(MeetingPoints.map(BmacId));
-    }
-    if(minDevicesPositions.length==3) {
-      _meetingPointsList();
-    }else{
-      getDeviceDetails();
+      }
     }
   }
 
-  void _meetingPointsList() {
-    ///get all the data distance*3, positionA and PositionB *3
-    listPoints = minDevicesPositions.map((data) => MeetingPoints.fromMap(data)).toList();
-    getMeetingPointsModified(listPoints);
 
-  }
-  // ignore: non_constant_identifier_names
-  _CalculateRsi(ScanResult result) {
-    var txPower;
-    txPower = result.advertisementData.txPowerLevel == null ? -59 : result.advertisementData.txPowerLevel;
-    var ratio = result.rssi * 1.0 / txPower;
-    if (ratio < 1.0) {
-      return math.pow(ratio, 10).toStringAsFixed(1);
-    } else {
-      var distance = (0.89976) * math.pow(ratio, 7.7095) + 0.111;
-      return distance.toStringAsFixed(2);
-    }
-  }
 
   void getMeetingPointsModified(List<MeetingPoints> list) {
     if(list.length == 3) {
@@ -162,11 +147,14 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
     // TODO: implement build
-    return  BidirectionalScrollViewPlugin(
+    return Scaffold(
+      appBar: AppBar(title: Text("Find Layout"),),
+      body:  BidirectionalScrollViewPlugin(
         child: CustomPaint(
           painter: MyPainter(),
           size: new Size(width * 2, height),
         ),
+      ),
     );
   }
 

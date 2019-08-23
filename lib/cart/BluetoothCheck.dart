@@ -101,25 +101,9 @@ class BluetoothOnState extends State<BluetoothOn> {
       appBar: AppBar(
         title: Text('Shop Layout'),
       ),
-      body: RefreshIndicator(
-        onRefresh: () =>
-            FlutterBlue.instance.startScan(timeout: Duration(seconds: 4)),
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              StreamBuilder<List<BluetoothDevice>>(
-                stream: Stream.periodic(Duration(seconds: 2))
-                    .asyncMap((_) => FlutterBlue.instance.connectedDevices),
-                initialData: [],
-                builder: (c, snapshot) => Column(
-                  children: snapshot.data
-                      .map((d) => ListTile(
-                    title: Text(d.name),
-                    subtitle: Text(d.id.toString()),
-                  ))
-                      .toList(),
-                ),
-              ),
+      body:  SingleChildScrollView(
+          child:
+
               StreamBuilder<List<ScanResult>>(
                 stream: FlutterBlue.instance.scanResults,
                 initialData: [],
@@ -130,9 +114,6 @@ class BluetoothOnState extends State<BluetoothOn> {
                       .toList(),
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }

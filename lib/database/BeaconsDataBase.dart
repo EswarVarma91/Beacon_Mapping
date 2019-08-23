@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'dart:io' as io;
@@ -49,6 +50,22 @@ class BeaconsDataBase {
 //    List<Map> maps=await dbClient.rawQuery("SELECT * FROM $TABLE");
 
     List<Map> maps=await dbClient.rawQuery("SELECT mac_id,positionA,positionB FROM $TABLE WHERE mac_id=$macid");
+    List<BeaconsM> beacons = [];
+    if (maps.length > 0) {
+      for (int i = 0; i < maps.length; i++) {
+        beacons.add(BeaconsM.fromMap(maps[i]));
+        print(beacons);
+        Fluttertoast.showToast(msg: beacons.toString());
+      }
+    }
+    return beacons;
+  }
+Future<List<BeaconsM>> getAllBeacons() async {
+    var dbClient = await db;
+//    List<Map> maps = await dbClient.query(TABLE, columns: [ID, NAME, PRICE]);
+    List<Map> maps=await dbClient.rawQuery("SELECT * FROM $TABLE");
+
+//    List<Map> maps=await dbClient.rawQuery("SELECT mac_id,positionA,positionB FROM $TABLE WHERE mac_id=$macid");
     List<BeaconsM> beacons = [];
     if (maps.length > 0) {
       for (int i = 0; i < maps.length; i++) {
