@@ -79,6 +79,8 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
 
         beacons = dbHelper.getBeaconByMacId(macid);
 
+        //db error it was called on null receiver:null Tried Calling: Sqflite
+
         for(int i=0;i<beacons.length;i++){
 
           if(beacons[i].mac_id==macid){
