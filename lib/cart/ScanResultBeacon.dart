@@ -9,11 +9,8 @@ import 'package:untitled/model/MeetingPoints.dart';
 import 'package:untitled/model/SortBlue.dart';
 import 'dart:math' as math;
 
-
-
 class ScanResultBeacon extends StatefulWidget {
   final ScanResult result;
-
   ScanResultBeacon({this.result});
 
   @override
@@ -22,7 +19,6 @@ class ScanResultBeacon extends StatefulWidget {
 
 class ScanResultBeaconState extends State<ScanResultBeacon> {
   ScanResult result;
-
   ScanResultBeaconState({this.result});
 
   List<Map<String, String>> minDevicesPositions = [];
@@ -34,17 +30,17 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
   String xpoint = "", ypoint = "";
   var isLoading = false;
   List<BeaconsM> beacons;
-  BeaconsDataBase dbHelper;
+  var dbHelper;
   String BmacId,BpositionA,BpositionB;
 
   @override
   void initState() {
     super.initState();
     getDeviceDetails();
+    dbHelper = BeaconsDataBase();
   }
 
-// ignore: non_constant_identifier_names
-  _CalculateRsi(ScanResult result) {
+  _calculateRsi(ScanResult result) {
     var txPower;
     txPower = result.advertisementData.txPowerLevel == null ? -59 : result.advertisementData.txPowerLevel;
     var ratio = result.rssi * 1.0 / txPower;
@@ -58,15 +54,15 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
 
   getDeviceDetails() {
 
-    SortBlue bleDevice = SortBlue(result.device.id.toString(), _CalculateRsi(result));
+    SortBlue bleDevice = SortBlue(result.device.id.toString(), _calculateRsi(result));
 
      if (list.length < 3) {
        list.add(bleDevice);
       } else {
        int indexToReplace = -1;
        for (int i = 0; i < list.length; i++) {
-         // compare distance
-         if(double.parse(bleDevice.distance) < double.parse(list[i].distance)) {
+         // compare distance and also we need to mac id
+         if((double.parse(bleDevice.distance) < double.parse(list[i].distance)) && (!list[i].mac_id.contains(bleDevice.mac_id))) {
            indexToReplace = i;
            break;
          }
@@ -75,37 +71,33 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
          list[indexToReplace] = bleDevice;
        }
      }
-     //  macid and distance to new call
-    for(int i=0;i<list.length;i++){
-      String macid =list[i].bmac_id.toString();
-      String distance=list[i].bdistance.toString();
-      _fetchData(macid, distance);
-    }
-  }
 
-  _fetchData(String macid, String distance) {
-    beacons = dbHelper.getAllBeacons() as List<BeaconsM>;
+    if(list.length == 3){
+      //  macid and distance to new call
+      for(int i=0;i<list.length;i++){
+        String macid =list[i].bmac_id.toString();
+        String distance=list[i].bdistance.toString();
 
-    for(int i=0;i<beacons.length;i++){
-      if(beacons[i].mac_id==macid){
-        Map<String, String> devices1 = new Map();
-        devices1['mac_id'] = beacons[i].mac_id.toString();
-        devices1['distance'] = distance;
-        devices1['positionA'] =  beacons[i].bpositionA.toString();
-        devices1['positionB'] = beacons[i].bpositionB.toString();
-        minDevicesPositions.add(devices1);
-      }
+        beacons = dbHelper.getBeaconByMacId(macid);
 
-      if(minDevicesPositions.length==3) {
+        for(int i=0;i<beacons.length;i++){
+
+          if(beacons[i].mac_id==macid){
+            Map<String, String> devices1 = new Map();
+            devices1['mac_id'] = beacons[i].mac_id.toString();
+            devices1['distance'] = distance;
+            devices1['positionA'] =  beacons[i].bpositionA.toString();
+            devices1['positionB'] = beacons[i].bpositionB.toString();
+            minDevicesPositions.add(devices1);
+          }
+        }
         listPoints = minDevicesPositions.map((data) => MeetingPoints.fromMap(data)).toList();
         getMeetingPointsModified(listPoints);
-      }else{
-        getDeviceDetails();
-
       }
+    }else{
+      getDeviceDetails();
     }
   }
-
 
 
   void getMeetingPointsModified(List<MeetingPoints> list) {
@@ -144,17 +136,14 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
+    var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
     // TODO: implement build
-    return Scaffold(
-      appBar: AppBar(title: Text("Find Layout"),),
-      body:  BidirectionalScrollViewPlugin(
+    return BidirectionalScrollViewPlugin(
         child: CustomPaint(
           painter: MyPainter(),
           size: new Size(width * 2, height),
         ),
-      ),
     );
   }
 
