@@ -101,15 +101,37 @@ class BluetoothOnState extends State<BluetoothOn> {
       appBar: AppBar(
         title: Text('Shop Layout'),
       ),
-      body: StreamBuilder<List<ScanResult>>(
-        stream: FlutterBlue.instance.scanResults,
-        initialData: [],
-        builder: (c, snapshot) => Column(
-          children: BluetoothOnState.filterDevices(snapshot)
-          //     snapshot
-              .data
-              .map((r) => ScanResultBeacon(result :r))
-              .toList(),
+      body: RefreshIndicator(
+        onRefresh: () =>
+            FlutterBlue.instance.startScan(timeout: Duration(seconds: 4)),
+        child: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              StreamBuilder<List<BluetoothDevice>>(
+                stream: Stream.periodic(Duration(seconds: 2))
+                    .asyncMap((_) => FlutterBlue.instance.connectedDevices),
+                initialData: [],
+                builder: (c, snapshot) => Column(
+                  children: snapshot.data
+                      .map((d) => ListTile(
+                    title: Text(d.name),
+                    subtitle: Text(d.id.toString()),
+                  ))
+                      .toList(),
+                ),
+              ),
+              StreamBuilder<List<ScanResult>>(
+                stream: FlutterBlue.instance.scanResults,
+                initialData: [],
+                builder: (c, snapshot) => Column(
+                  children: BluetoothOnState.filterDevices(snapshot)
+                  //     snapshot
+                       .data.map((r) => ScanResultBeacon(result :r))
+                      .toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

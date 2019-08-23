@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:bidirectional_scroll_view/bidirectional_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -9,6 +8,8 @@ import 'package:untitled/model/BeaconsM.dart';
 import 'package:untitled/model/MeetingPoints.dart';
 import 'package:untitled/model/SortBlue.dart';
 import 'dart:math' as math;
+
+
 
 class ScanResultBeacon extends StatefulWidget {
   final ScanResult result;
@@ -33,28 +34,17 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
   String xpoint = "", ypoint = "";
   var isLoading = false;
   List<BeaconsM> beacons;
-  var dbHelper;
+  BeaconsDataBase dbHelper;
   String BmacId,BpositionA,BpositionB;
 
   @override
   void initState() {
     super.initState();
-    dbHelper = BeaconsDataBase();
     getDeviceDetails();
   }
 
-  /*refreshList() {
-    setState(() {
-      isLoading = true;
-    });
-    beacons = dbHelper.getAllBeacons();
-    setState(() {
-      isLoading = false;
-    });
-  }*/
 
-  void getDeviceDetails() {
-
+  getDeviceDetails() {
 
     SortBlue bleDevice = SortBlue(result.device.id.toString(), _CalculateRsi(result));
 
@@ -77,15 +67,18 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
     for(int i=0;i<list.length;i++){
       String macid =list[i].bmac_id.toString();
       String distance=list[i].bdistance.toString();
-      _fetchData(macid,distance);
+      _fetchData(macid, distance);
     }
     // ** Top Three Mac Ids and Distance => Query or Service to get Position for Beacon Mac_Id ** //
   }
 
   _fetchData(String macid, String distance) {
+    beacons = dbHelper.getBeaconByMacId(macid) as List<BeaconsM>;
+    print("Check Data Base : "+beacons.toString());
+    _sendBeacons(beacons, distance);
+    }
 
-    //request query by mac id
-    //db.getMacIdPosition query output in list => beacons
+  _sendBeacons(List<BeaconsM>  beacons,distance) {
 
     for (int j = 0; j < beacons.length; j++) {
       setState(() {
@@ -102,23 +95,20 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
 
       minDevicesPositions.add(devices1);
 
-      _meetingPointsList();
       //minDevicesPositions.add(MeetingPoints.map(BmacId));
-
+    }
+    if(minDevicesPositions.length==3) {
+      _meetingPointsList();
+    }else{
+      getDeviceDetails();
     }
   }
 
   void _meetingPointsList() {
-
     ///get all the data distance*3, positionA and PositionB *3
-
     listPoints = minDevicesPositions.map((data) => MeetingPoints.fromMap(data)).toList();
+    getMeetingPointsModified(listPoints);
 
-
-  getMeetingPointsModified(listPoints);
-
-
-//    getMeetingPoints(25.52, 9.51, 10.47, 10, 480, 200, 15, 290, 495);
   }
   // ignore: non_constant_identifier_names
   _CalculateRsi(ScanResult result) {
@@ -131,24 +121,6 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
       var distance = (0.89976) * math.pow(ratio, 7.7095) + 0.111;
       return distance.toStringAsFixed(2);
     }
-  }
-
-  void getMeetingPoints(distanceA, distanceB, distanceC, pointA1, pointA2, pointB1, pointB2, pointC1, pointC2) {
-    var w, z, x, y, y2;
-    w = distanceA * distanceA - distanceB * distanceB - pointA1 * pointA1 - pointA2 * pointA2 + pointB1 * pointB1 + pointB2 * pointB2;
-    z = distanceB * distanceB - distanceC * distanceC - pointB1 * pointB1 - pointB2 * pointB2 + pointC1 * pointC1 + pointC2 * pointC2;
-    x = (w * (pointC2 - pointB2) - z * (pointB2 - pointA2)) / (2 * ((pointB1 - pointA1) * (pointC1 - pointB2) - (pointC1 - pointB1) * (pointB2 - pointA2)));
-    y = (w - 2 * x * (pointB1 - pointA1)) / (2 * (pointB2 - pointA2));
-    y2 = (z - 2 * x * (pointC1 - pointB1)) / (2 * (pointC1 - pointB2));
-    y = (y + y2) / 2;
-
-    setState(() {
-      xpoint = x.toStringAsFixed(0);
-      ypoint = y.toStringAsFixed(0);
-    });
-
-    const pushData = const Duration(seconds:30);
-    new Timer.periodic(pushData, (Timer t) => _sendData(xpoint,ypoint));
   }
 
   void getMeetingPointsModified(List<MeetingPoints> list) {
@@ -185,7 +157,6 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -203,8 +174,4 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
     //  position of the person
     // Service call to send the person location to server
   }
-
-
-
-
 }

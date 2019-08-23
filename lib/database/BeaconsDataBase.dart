@@ -43,10 +43,12 @@ class BeaconsDataBase {
     return res;
   }
 
-  Future<List<BeaconsM>> getAllBeacons() async {
+  Future<List<BeaconsM>> getBeaconByMacId(String macid) async {
     var dbClient = await db;
 //    List<Map> maps = await dbClient.query(TABLE, columns: [ID, NAME, PRICE]);
-    List<Map> maps=await dbClient.rawQuery("SELECT * FROM $TABLE");
+//    List<Map> maps=await dbClient.rawQuery("SELECT * FROM $TABLE");
+
+    List<Map> maps=await dbClient.rawQuery("SELECT mac_id,positionA,positionB FROM $TABLE WHERE mac_id=$macid");
     List<BeaconsM> beacons = [];
     if (maps.length > 0) {
       for (int i = 0; i < maps.length; i++) {
