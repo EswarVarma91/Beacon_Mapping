@@ -31,6 +31,7 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
   var isLoading = false;
   List<BeaconsM> beacons;
   BeaconsDataBase dbHelper;
+  int indexToReplace = -1;
   String BmacId,BpositionA,BpositionB;
 
   @override
@@ -56,12 +57,29 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
     SortBlue bleDevice = SortBlue(result.device.id.toString(), _calculateRsi(result));
 
      if (list.length < 3) {
-       list.add(bleDevice);
-      } else {
-       int indexToReplace = -1;
+       int foundIndex = list.indexWhere((d) => d.mac_id == bleDevice.mac_id);
+       if (foundIndex != -1) {
+         list[foundIndex] = bleDevice;
+       } else {
+         list.add(bleDevice);
+       }
+
+       /*if (list.isEmpty) {
+         list.add(bleDevice);
+       } else {
+         for (int i = 0; i < list.length; i++) {
+           if (!list[i].mac_id.contains(bleDevice.mac_id)) {
+             list.add(bleDevice);
+             print(list.toString());
+           }
+         }
+       }*/
+     }
+       else {
        for (int i = 0; i < list.length; i++) {
          // compare distance and also we need to mac id
-         if((double.parse(bleDevice.distance) < double.parse(list[i].distance)) && (!list[i].mac_id.contains(bleDevice.mac_id))) {
+       //  if((double.parse(bleDevice.distance) < double.parse(list[i].distance)) && (!list[i].mac_id.contains(bleDevice.mac_id))) {
+         if((double.parse(bleDevice.distance) < double.parse(list[i].distance))) {
            indexToReplace = i;
            break;
          }
@@ -72,6 +90,7 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
      }
 
     if(list.length == 3){
+      print(list.toString());
       //  macid and distance to new call
       for(int i=0;i<list.length;i++){
         String macid =list[i].bmac_id.toString();
@@ -79,7 +98,7 @@ class ScanResultBeaconState extends State<ScanResultBeacon> {
 
         beacons = dbHelper.getBeaconByMacId(macid);
 
-        ///db error it was called on null receiver:null Tried Calling: Sqflite
+        //db error it was called on null receiver:null Tried Calling: Sqflite
 
         for(int i=0;i<beacons.length;i++){
 
